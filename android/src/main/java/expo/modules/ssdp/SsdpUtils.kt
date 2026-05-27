@@ -7,7 +7,7 @@ import java.util.Collections
 // Shared constants — internal so tests can access them without reflection
 // ---------------------------------------------------------------------------
 
-internal const val LIBRARY_VERSION = "0.0.2"
+internal const val LIBRARY_VERSION = "0.0.3"
 internal const val MULTICAST_ADDRESS = "239.255.255.250"
 internal const val BROADCAST_ADDRESS = "255.255.255.255"
 internal const val MULTICAST_PORT = 1900

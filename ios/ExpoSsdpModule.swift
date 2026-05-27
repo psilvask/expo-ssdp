@@ -1,8 +1,9 @@
 import ExpoModulesCore
 import CocoaAsyncSocket
 import Network
+import os
 
-private let libraryVersion = "0.0.2"
+private let libraryVersion = "0.0.3"
 private let multicastAddress = "239.255.255.250"
 private let broadcastAddress = "255.255.255.255"
 private let multicastPort: UInt16 = 1900
