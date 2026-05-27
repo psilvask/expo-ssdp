@@ -193,14 +193,21 @@ function generateId(): string {
 function normalizeOptions(options: SearchOptions) {
   const mx = options.mx ?? 3;
   const timeoutMs = options.timeoutMs ?? 5_000;
-  if (mx * 1000 >= timeoutMs) {
+  if (mx * 1000 > timeoutMs) {
     console.warn(
       `[expo-ssdp] mx (${mx}s) >= timeoutMs (${timeoutMs}ms). ` +
         "Devices that wait longer than timeoutMs will be missed."
     );
   }
+  const searchTargets = options.searchTargets ?? ["ssdp:all"];
+  if (searchTargets.length === 0) {
+    console.warn(
+      "[expo-ssdp] searchTargets is empty — no M-SEARCH probes will be sent. " +
+        'Pass at least one target, or omit the option to default to ["ssdp:all"].'
+    );
+  }
   return {
-    searchTargets: options.searchTargets ?? ["ssdp:all"],
+    searchTargets,
     timeoutMs,
     mx,
     repeatProbe: options.repeatProbe ?? true,

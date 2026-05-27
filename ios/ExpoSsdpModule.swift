@@ -1,8 +1,8 @@
 import ExpoModulesCore
 import CocoaAsyncSocket
-import Darwin
+import Network
 
-private let libraryVersion = "0.0.1"
+private let libraryVersion = "0.0.2"
 private let multicastAddress = "239.255.255.250"
 private let broadcastAddress = "255.255.255.255"
 private let multicastPort: UInt16 = 1900
@@ -133,23 +133,26 @@ private final class SsdpSearcher: NSObject, GCDAsyncUdpSocketDelegate, @unchecke
     options: SearchOptions,
     emit: @escaping (String, [String: Any]) -> Void
   ) async throws {
-    streamSearchId = searchId
-    streamEmitter = emit
+    // NOTE: streamSearchId and streamEmitter are intentionally NOT set here.
+    // They are assigned inside socketQueue.async in start() — on the same queue
+    // as the delegate callbacks — to eliminate any data race.
     let _ = try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<[[String: Any]], Error>) in
       socketQueue.async { [weak self] in
         guard let self else { continuation.resume(returning: []); return }
-        do { try self.start(options: options, continuation: continuation) }
+        do { try self.start(options: options, continuation: continuation, streamSearchId: searchId, streamEmitter: emit) }
         catch { continuation.resume(throwing: error) }
       }
     }
-    emit("onSsdpSearchComplete", ["searchId": searchId])
+    // onSsdpSearchComplete is emitted from finish() on socketQueue — see below.
   }
 
   // MARK: - Private
 
   private func start(
     options: SearchOptions,
-    continuation: CheckedContinuation<[[String: Any]], Error>
+    continuation: CheckedContinuation<[[String: Any]], Error>,
+    streamSearchId: String? = nil,
+    streamEmitter: ((String, [String: Any]) -> Void)? = nil
   ) throws {
     guard socket == nil else { throw SsdpError.scanInProgress }
     finished = false
@@ -157,6 +160,10 @@ private final class SsdpSearcher: NSObject, GCDAsyncUdpSocketDelegate, @unchecke
     self.options = options
     self.options.mx = max(options.mx, 1)
     self.continuation = continuation
+    // Assign stream properties here (on socketQueue) before beginReceiving() so
+    // the delegate callback always sees them — no cross-thread data race.
+    self.streamSearchId = streamSearchId
+    self.streamEmitter = streamEmitter
     let effectiveTimeoutMs = max(options.timeoutMs, 500.0)
 
     let udpSocket = GCDAsyncUdpSocket(delegate: self, delegateQueue: socketQueue)
@@ -214,6 +221,12 @@ private final class SsdpSearcher: NSObject, GCDAsyncUdpSocketDelegate, @unchecke
     timeoutWorkItem?.cancel(); secondProbeWorkItem?.cancel()
     timeoutWorkItem = nil; secondProbeWorkItem = nil
     socket?.close(); socket = nil
+    // Emit the streaming complete event here (on socketQueue), BEFORE resuming
+    // the continuation, so it is guaranteed to arrive after all onSsdpDeviceFound
+    // events — which are also emitted on this same queue.
+    if error == nil, let id = streamSearchId, let emit = streamEmitter {
+      emit("onSsdpSearchComplete", ["searchId": id])
+    }
     if let error, let continuation { continuation.resume(throwing: error) }
     else if let continuation { continuation.resume(returning: Array(results.values)) }
     continuation = nil
@@ -269,6 +282,8 @@ private final class SsdpNotifyListener: NSObject, GCDAsyncUdpSocketDelegate, @un
   private var listenerId: String = ""
   private var emit: ((String, [String: Any]) -> Void)?
   private var stopped = false
+  /// Cached regex — compiling NSRegularExpression is expensive; reuse across all NOTIFY packets.
+  private let maxAgeRegex = try? NSRegularExpression(pattern: "max-age=\\s*(\\d+)", options: .caseInsensitive)
 
   func stop() {
     socketQueue.async { [weak self] in
@@ -282,11 +297,16 @@ private final class SsdpNotifyListener: NSObject, GCDAsyncUdpSocketDelegate, @un
     listenerId: String,
     emit: @escaping (String, [String: Any]) -> Void
   ) async {
-    self.listenerId = listenerId
-    self.emit = emit
     await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
       socketQueue.async { [weak self] in
         guard let self else { continuation.resume(); return }
+        // Guard against stop() being called before the socket is created.
+        // If already stopped, honour it and return immediately.
+        guard !self.stopped else { continuation.resume(); return }
+        // Assign properties on socketQueue so the delegate callbacks read
+        // them on the same queue — no cross-thread race.
+        self.listenerId = listenerId
+        self.emit = emit
         do {
           let udpSocket = GCDAsyncUdpSocket(delegate: self, delegateQueue: self.socketQueue)
           self.socket = udpSocket
@@ -320,7 +340,7 @@ private final class SsdpNotifyListener: NSObject, GCDAsyncUdpSocketDelegate, @un
     if let v = headers["LOCATION"] ?? headers["Location"] { event["location"] = v }
     
     if let cc = headers["CACHE-CONTROL"] ?? headers["Cache-Control"],
-       let regex = try? NSRegularExpression(pattern: "max-age=\\s*(\\d+)", options: .caseInsensitive),
+       let regex = maxAgeRegex,
        let match = regex.firstMatch(in: cc, options: [], range: NSRange(location: 0, length: cc.utf16.count)),
        let range = Range(match.range(at: 1), in: cc),
        let age = Int(cc[range]) {
@@ -330,7 +350,12 @@ private final class SsdpNotifyListener: NSObject, GCDAsyncUdpSocketDelegate, @un
     emit?("onSsdpNotify", event)
   }
 
-  func udpSocketDidClose(_ sock: GCDAsyncUdpSocket, withError error: Error?) {}
+  func udpSocketDidClose(_ sock: GCDAsyncUdpSocket, withError error: Error?) {
+    // Forward socket errors to JS so callers can detect network loss and restart
+    // the listener. Guard stopped so we don't emit after an intentional remove().
+    guard let err = error, !stopped else { return }
+    emit?("onSsdpNotifyError", ["listenerId": listenerId, "error": err.localizedDescription])
+  }
 }
 
 // ---------------------------------------------------------------------------

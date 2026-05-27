@@ -87,20 +87,23 @@ export default function App() {
       .map((t) => t.trim())
       .filter(Boolean);
 
+    const stream = searchStream({
+      searchTargets: [searchTarget],
+      timeoutMs: parsedTimeout,
+      mx: parsedMx,
+      repeatProbe,
+      unicastTargets: parsedUnicast,
+    });
+
+    // Explicitly close the generator when aborted so its finally block runs
+    // immediately (calling stopSearch + removing listeners), regardless of
+    // whether any more devices arrive. Without this, the generator would be
+    // stuck awaiting its internal promise indefinitely — a resource leak.
+    controller.signal.addEventListener("abort", () => {
+      void stream.return(undefined);
+    });
+
     try {
-      const stream = searchStream({
-        searchTargets: [searchTarget],
-        timeoutMs: parsedTimeout,
-        mx: parsedMx,
-        repeatProbe,
-        unicastTargets: parsedUnicast,
-      });
-
-      // Handle abort control
-      controller.signal.addEventListener("abort", () => {
-        // Stream will be terminated via throw on loop iteration if cancelled native-side
-      });
-
       for await (const device of stream) {
         if (controller.signal.aborted) break;
         setDiscoveredDevices((prev) => {

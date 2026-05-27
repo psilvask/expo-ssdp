@@ -22,15 +22,7 @@ import java.net.InetSocketAddress
 import java.net.MulticastSocket
 import java.net.NetworkInterface
 import java.net.SocketTimeoutException
-import java.util.Collections
 import java.util.concurrent.ConcurrentHashMap
-
-private const val LIBRARY_VERSION = "0.0.1"
-private const val MULTICAST_ADDRESS = "239.255.255.250"
-private const val BROADCAST_ADDRESS = "255.255.255.255"
-private const val MULTICAST_PORT = 1900
-private const val SOCKET_READ_TIMEOUT_MS = 1000
-private const val BUFFER_SIZE = 16_384
 
 // ---------------------------------------------------------------------------
 // Options Record
@@ -217,8 +209,10 @@ private class SsdpSearcher(
           responses[dedupeKey] = result
           onDevice(result)
         }
-        for (iface in activeInterfaces) runCatching { socket.leaveGroup(groupAddress, iface) }
       } finally {
+        // Leave multicast groups and dispose the cancellation hook on every exit path —
+        // including coroutine cancellation from stopSearch() — so port 1900 is freed promptly.
+        for (iface in activeInterfaces) runCatching { socket.leaveGroup(groupAddress, iface) }
         registration?.dispose()
       }
     }
@@ -276,11 +270,14 @@ private class SsdpNotifyListener(
             (headers["LOCATION"] ?: headers["Location"])?.let { event["location"] = it }
             // Parse max-age from CACHE-CONTROL: max-age=1800
             (headers["CACHE-CONTROL"] ?: headers["Cache-Control"])
-              ?.let { cc -> Regex("max-age=(\\d+)").find(cc)?.groupValues?.get(1)?.toIntOrNull() }
+              ?.let { cc -> MAX_AGE_REGEX.find(cc)?.groupValues?.get(1)?.toIntOrNull() }
               ?.let { event["maxAge"] = it }
             emitEvent("onSsdpNotify", event)
           }
         } finally {
+          // Leave multicast groups before the socket closes so the OS can
+          // promptly free port 1900 for subsequent listener restarts.
+          for (iface in activeInterfaces) runCatching { socket.leaveGroup(groupAddress, iface) }
           registration?.dispose()
         }
       }
@@ -289,48 +286,3 @@ private class SsdpNotifyListener(
     }
   }
 }
-
-// ---------------------------------------------------------------------------
-// Shared utilities
-// ---------------------------------------------------------------------------
-
-private fun buildRequest(searchTarget: String, mx: Int): String = buildString {
-  append("M-SEARCH * HTTP/1.1\r\n")
-  append("HOST: $MULTICAST_ADDRESS:$MULTICAST_PORT\r\n")
-  append("MAN: \"ssdp:discover\"\r\n")
-  append("MX: $mx\r\n")
-  append("ST: $searchTarget\r\n")
-  append("USER-AGENT: ExpoSsdp/$LIBRARY_VERSION UPnP/1.1\r\n")
-  append("\r\n")
-}
-
-private fun parseHeaders(raw: String): Map<String, String> {
-  val headers = mutableMapOf<String, String>()
-  raw.lines().drop(1).forEach { line ->
-    val idx = line.indexOf(':')
-    if (idx <= 0) return@forEach
-    val name = line.substring(0, idx).trim()
-    val value = line.substring(idx + 1).trim()
-    headers[name] = value
-    headers[name.uppercase()] = value
-  }
-  return headers
-}
-
-private fun buildResult(address: String, headers: Map<String, String>, raw: String): Map<String, Any> {
-  val result = mutableMapOf<String, Any>("address" to address, "headers" to headers, "raw" to raw)
-  (headers["LOCATION"] ?: headers["Location"])?.let { result["location"] = it }
-  (headers["USN"] ?: headers["usn"])?.let { result["usn"] = it }
-  (headers["ST"] ?: headers["st"])?.let { result["st"] = it }
-  (headers["SERVER"] ?: headers["Server"])?.let { result["server"] = it }
-  return result
-}
-
-private fun getActiveIpv4Interfaces(): List<NetworkInterface> = try {
-  Collections.list(NetworkInterface.getNetworkInterfaces()).filter { iface ->
-    iface.isUp && !iface.isLoopback &&
-      iface.inetAddresses.asSequence().any { addr ->
-        !addr.isLoopbackAddress && addr.hostAddress?.contains(':') == false
-      }
-  }
-} catch (_: Exception) { emptyList() }

@@ -124,6 +124,7 @@ const devices = await search({
 | `timeoutMs` | `number` | `5000` | Total scan duration in milliseconds. The socket stays open for this duration to collect responses. |
 | `mx` | `number` | `3` | MX (Maximum Wait) header in seconds. Devices may delay their response up to this value. Higher values reduce UDP collisions on busy networks. |
 | `repeatProbe` | `boolean` | `true` | If true, a second probe burst is sent halfway through `timeoutMs`. Improves reliability on lossy or mesh Wi-Fi. |
+| `unicastTargets` | `string[]` | `[]` | Optional list of device IPv4 addresses to send unicast M-SEARCH packets to in addition to the standard multicast/broadcast probes. Useful for re-querying a known device or on networks that block multicast. |
 
 #### Returns: `Promise<SsdpDevice[]>`
 
@@ -199,7 +200,7 @@ const devices = await search();
 
 ## Examples
 
-For a complete, interactive, high-performance explorer application showcasing all features (with dark mode and detailed header inspection), check out the [example app](file:///Users/bobcook/AltCode/ExpoSSDP/example).
+For a complete, interactive, high-performance explorer application showcasing all features (with dark mode and detailed header inspection), check out the [example app](./example).
 
 ### Real-Time Streaming Discovery
 
@@ -208,8 +209,10 @@ Use `searchStream` (an `AsyncGenerator`) to yield devices as they are found, whi
 ```typescript
 import { searchStream } from 'expo-ssdp';
 
+const stream = searchStream({ timeoutMs: 8000 });
+
 try {
-  for await (const device of searchStream({ timeoutMs: 8000 })) {
+  for await (const device of stream) {
     console.log('Discovered:', device.address, '-', device.server);
     // Update React state or UI list immediately!
   }
@@ -217,6 +220,13 @@ try {
 } catch (err) {
   console.error('Search failed:', err);
 }
+```
+
+To cancel an active stream early (e.g., when a user unmounts the component or presses a "Cancel" button), call `stream.return(undefined)`. This immediately halts the native search, closes the socket, and resolves the generator:
+
+```typescript
+// Call this when you want to stop discovery:
+await stream.return(undefined);
 ```
 
 ### Passive Live Monitoring
@@ -313,7 +323,7 @@ The `MX` header tells devices how long they may wait (in seconds) before sending
 - Some devices only respond to specific `ST` values — try multiple `searchTargets` including `"ssdp:all"`.
 
 **Different results on iOS vs Android:**
-- iOS binds to every active network interface. Android uses the default interface only. This can cause differences in which multicast groups are joined.
+- Both iOS and Android join multicast groups on every active non-loopback IPv4 interface. Results may still differ if the set of active interfaces differs (e.g., one platform has a VPN adapter active that the other does not).
 
 ---
 
