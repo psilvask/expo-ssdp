@@ -18,6 +18,9 @@
     },
     "android": {
       "package": "expo.modules.ssdp.example"
-    }
+    },
+    "plugins": [
+      "expo-status-bar"
+    ]
   }
 }

@@ -53,16 +53,19 @@
     "name": "ExpoSsdp"
   },
   "peerDependencies": {
-    "expo": ">=52.0.0",
-    "expo-modules-core": ">=3.0.0",
-    "react-native": ">=0.76.0"
+    "expo": ">=56.0.0",
+    "expo-modules-core": ">=56.0.0",
+    "react": ">=19.2.0",
+    "react-native": ">=0.78.0"
   },
   "devDependencies": {
     "@types/jest": "^30.0.0",
     "@types/react": "^19.0.0",
-    "expo": "^52.0.0",
-    "expo-modules-core": "~3.0.0",
+    "expo": "^56.0.0",
+    "expo-modules-core": "~56.0.0",
     "jest": "^30.4.2",
+    "react": "19.2.3",
+    "react-native": "0.85.3",
     "ts-jest": "^29.4.11",
     "typescript": "^5.0.0"
   }

@@ -6,6 +6,7 @@ import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.modules.ModuleDefinition
 import expo.modules.kotlin.records.Field
 import expo.modules.kotlin.records.Record
+import expo.modules.kotlin.Promise
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.DisposableHandle
 import kotlinx.coroutines.Dispatchers
@@ -57,9 +58,15 @@ class ExpoSsdpModule : Module() {
       "onSsdpNotifyError"
     )
 
-    // ----- Batch search (backward-compatible) -----
-    AsyncFunction("search") { options: SearchOptions ->
-      SsdpSearcher(appContext).search(options)
+    AsyncFunction("search") { options: SearchOptions, promise: Promise ->
+      moduleScope.launch {
+        try {
+          val results = SsdpSearcher(appContext).search(options)
+          promise.resolve(results)
+        } catch (e: Exception) {
+          promise.reject("ERR_SSDP_SEARCH", e.message, e)
+        }
+      }
     }
 
     // ----- Streaming search -----
