@@ -1,0 +1,11 @@
+{
+  "name": "ExpoSsdp",
+  "platforms": ["apple", "android"],
+  "apple": {
+    "modules": ["ExpoSsdpModule"],
+    "podspecPath": "expo-ssdp.podspec"
+  },
+  "android": {
+    "modules": ["expo.modules.ssdp.ExpoSsdpModule"]
+  }
+}

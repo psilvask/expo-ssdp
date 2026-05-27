@@ -1,0 +1,27 @@
+apply plugin: 'com.android.library'
+apply plugin: 'org.jetbrains.kotlin.android'
+
+// Resolve expo-modules-core via Node so this works in monorepos, Yarn PnP,
+// and any project layout where node_modules may not be exactly two levels up.
+def expoModulesCorePath = new File(
+  ["node", "--print", "require.resolve('expo-modules-core/package.json')"]
+    .execute(null, rootProject.rootDir)
+    .text.trim()
+).parentFile.absolutePath
+
+apply from: "$expoModulesCorePath/gradle/android-native-library.gradle"
+
+android {
+  namespace "expo.modules.ssdp"
+  compileSdkVersion 35
+
+  defaultConfig {
+    minSdkVersion 24
+    targetSdkVersion 35
+  }
+}
+
+dependencies {
+  implementation project(':expo-modules-core')
+  implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1'
+}

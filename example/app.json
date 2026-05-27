@@ -1,0 +1,23 @@
+{
+  "expo": {
+    "name": "Expo SSDP Example",
+    "slug": "expo-ssdp-example",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "expo.modules.ssdp.example",
+      "infoPlist": {
+        "NSLocalNetworkUsageDescription": "This app uses the local network to discover and monitor UPnP/SSDP devices (like Smart TVs, speakers, and smart hubs)."
+      },
+      "entitlements": {
+        "com.apple.developer.networking.multicast": true
+      }
+    },
+    "android": {
+      "package": "expo.modules.ssdp.example"
+    }
+  }
+}

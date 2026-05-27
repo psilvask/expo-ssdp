@@ -1,0 +1,58 @@
+{
+  "name": "expo-ssdp",
+  "version": "0.0.1",
+  "description": "An Expo module for SSDP device discovery on local networks. Supports iOS and Android with full New Architecture / Turbo Module compatibility.",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "source": "src/index.ts",
+  "files": [
+    "src",
+    "dist",
+    "android",
+    "ios",
+    "expo-module.config.json",
+    "expo-ssdp.podspec"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist",
+    "prepublishOnly": "npm run clean && npm run build"
+  },
+  "keywords": [
+    "expo-module",
+    "expo",
+    "ssdp",
+    "upnp",
+    "discovery",
+    "network",
+    "dlna",
+    "chromecast",
+    "smart-tv",
+    "iot"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bc-bane/expo-ssdp"
+  },
+  "author": "bc-bane",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/bc-bane/expo-ssdp/issues"
+  },
+  "homepage": "https://github.com/bc-bane/expo-ssdp#readme",
+  "expo": {
+    "autoInstall": true,
+    "name": "ExpoSsdp"
+  },
+  "peerDependencies": {
+    "expo": ">=52.0.0",
+    "expo-modules-core": ">=3.0.0",
+    "react-native": ">=0.76.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.0.0",
+    "expo": "^52.0.0",
+    "expo-modules-core": "~3.0.0",
+    "typescript": "^5.0.0"
+  }
+}

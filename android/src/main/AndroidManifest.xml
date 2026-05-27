@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  This manifest is merged into the host app's AndroidManifest.xml by the
+  Android Gradle build system. It declares the permissions required by
+  expo-ssdp so consumers don't have to add them manually.
+
+  INTERNET            — required to open UDP sockets.
+  CHANGE_WIFI_MULTICAST_STATE — required to acquire a MulticastLock, which
+                        enables the Wi-Fi driver to deliver multicast UDP
+                        packets to the socket (without it, joinGroup succeeds
+                        but responses are silently dropped by the driver).
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="expo.modules.ssdp">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE" />
+
+</manifest>
