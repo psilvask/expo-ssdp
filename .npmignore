@@ -1,0 +1,18 @@
+# Test and Mock files
+__mocks__/
+src/__tests__/
+android/src/test/
+
+# Build caches
+android/.gradle/
+android/build/
+ios/build/
+
+# Example app (if not already gitignored)
+example/
+
+# Config files only needed for development
+jest.config.js
+tsconfig.json
+.eslintrc.js
+.prettierrc
