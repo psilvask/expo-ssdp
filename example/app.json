@@ -12,9 +12,8 @@
       "infoPlist": {
         "NSLocalNetworkUsageDescription": "This app uses the local network to discover and monitor UPnP/SSDP devices (like Smart TVs, speakers, and smart hubs)."
       },
-      "entitlements": {
-        "com.apple.developer.networking.multicast": true
-      }
+      "entitlements": {},
+      "appleTeamId": "9ALNXHALH4"
     },
     "android": {
       "package": "expo.modules.ssdp.example"
