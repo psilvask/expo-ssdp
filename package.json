@@ -15,7 +15,8 @@
   "files": [
     "src",
     "dist",
-    "android",
+    "android/src",
+    "android/build.gradle",
     "ios",
     "expo-module.config.json",
     "expo-ssdp.podspec"

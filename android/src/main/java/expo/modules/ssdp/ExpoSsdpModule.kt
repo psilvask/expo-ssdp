@@ -35,6 +35,8 @@ private class SearchOptions : Record {
   @Field var mx: Int = 3
   @Field var repeatProbe: Boolean = true
   @Field var unicastTargets: List<String> = emptyList()
+  @Field var multicastEnabled: Boolean = true
+  @Field var broadcastEnabled: Boolean = true
 }
 
 // ---------------------------------------------------------------------------
@@ -181,8 +183,12 @@ private class SsdpSearcher(
 
         fun sendProbes() {
           payloads.forEach { payload ->
-            runCatching { socket.send(DatagramPacket(payload, payload.size, multicastAddr, MULTICAST_PORT)) }
-            runCatching { socket.send(DatagramPacket(payload, payload.size, broadcastAddr, MULTICAST_PORT)) }
+            if (options.multicastEnabled) {
+              runCatching { socket.send(DatagramPacket(payload, payload.size, multicastAddr, MULTICAST_PORT)) }
+            }
+            if (options.broadcastEnabled) {
+              runCatching { socket.send(DatagramPacket(payload, payload.size, broadcastAddr, MULTICAST_PORT)) }
+            }
             // Unicast probes (P4)
             for (addr in unicastAddrs) {
               runCatching { socket.send(DatagramPacket(payload, payload.size, addr, MULTICAST_PORT)) }

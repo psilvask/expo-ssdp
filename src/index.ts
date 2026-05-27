@@ -62,6 +62,19 @@ export type SearchOptions = {
    * re-querying a known device or for networks that block multicast.
    */
   unicastTargets?: string[];
+  /**
+   * Whether to send probes to the UPnP multicast address (`239.255.255.250`).
+   * On iOS 14+, this requires the `com.apple.developer.networking.multicast`
+   * entitlement, otherwise the socket will crash. Set to `false` to disable.
+   * @default true
+   */
+  multicastEnabled?: boolean;
+  /**
+   * Whether to send probes to the global broadcast address (`255.255.255.255`).
+   * This is a fallback for routers that block multicast.
+   * @default true
+   */
+  broadcastEnabled?: boolean;
 };
 
 // ---------------------------------------------------------------------------
@@ -148,6 +161,8 @@ type ExpoSsdpModuleType = InstanceType<typeof NativeModule> & {
     mx: number;
     repeatProbe: boolean;
     unicastTargets: string[];
+    multicastEnabled: boolean;
+    broadcastEnabled: boolean;
   }): Promise<SsdpDevice[]>;
 
   // Streaming API
@@ -157,6 +172,8 @@ type ExpoSsdpModuleType = InstanceType<typeof NativeModule> & {
     mx: number;
     repeatProbe: boolean;
     unicastTargets: string[];
+    multicastEnabled: boolean;
+    broadcastEnabled: boolean;
   }): void;
   stopSearch(searchId: string): void;
 
@@ -212,6 +229,8 @@ function normalizeOptions(options: SearchOptions) {
     mx,
     repeatProbe: options.repeatProbe ?? true,
     unicastTargets: options.unicastTargets ?? [],
+    multicastEnabled: options.multicastEnabled ?? true,
+    broadcastEnabled: options.broadcastEnabled ?? true,
   };
 }
 

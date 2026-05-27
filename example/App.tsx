@@ -93,6 +93,7 @@ export default function App() {
       mx: parsedMx,
       repeatProbe,
       unicastTargets: parsedUnicast,
+      multicastEnabled: false, // Disabled by default in the example to prevent iOS Entitlement crashes
     });
 
     // Explicitly close the generator when aborted so its finally block runs

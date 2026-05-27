@@ -90,6 +90,8 @@ private struct SearchOptions: Record {
   @Field var mx: Int = 3
   @Field var repeatProbe: Bool = true
   @Field var unicastTargets: [String] = []
+  @Field var multicastEnabled: Bool = true
+  @Field var broadcastEnabled: Bool = true
 }
 
 // ---------------------------------------------------------------------------
@@ -190,8 +192,12 @@ private final class SsdpSearcher: NSObject, GCDAsyncUdpSocketDelegate, @unchecke
   private func sendProbes(socket: GCDAsyncUdpSocket) {
     for target in options.searchTargets {
       guard let data = buildRequest(searchTarget: target, mx: options.mx).data(using: .utf8) else { continue }
-      socket.send(data, toHost: multicastAddress, port: multicastPort, withTimeout: -1, tag: 0)
-      socket.send(data, toHost: broadcastAddress, port: multicastPort, withTimeout: -1, tag: 1)
+      if options.multicastEnabled {
+        socket.send(data, toHost: multicastAddress, port: multicastPort, withTimeout: -1, tag: 0)
+      }
+      if options.broadcastEnabled {
+        socket.send(data, toHost: broadcastAddress, port: multicastPort, withTimeout: -1, tag: 1)
+      }
       // Unicast probes (P4)
       for host in options.unicastTargets {
         socket.send(data, toHost: host, port: multicastPort, withTimeout: -1, tag: 2)

@@ -69,8 +69,19 @@ The `com.apple.developer.networking.multicast` entitlement is a **restricted ent
 ```
 
 3. Enable it under **Xcode → Signing & Capabilities → + Capability → Multicast Networking**.
-
 > **Note:** This entitlement is free but requires Apple approval (typically a few days for legitimate device-discovery use cases).
+
+**Testing Without the Entitlement?**
+If you have not yet been approved for the entitlement, iOS will forcefully crash the underlying UDP socket with a "No route to host" error if you attempt to send Multicast or Global Broadcast packets. To test the library on a physical iOS device without the entitlement, you must explicitly disable these probes and use a `unicastTargets` fallback:
+
+```typescript
+const devices = await search({
+  unicastTargets: ["192.168.1.50"], // Target a specific device IP
+  multicastEnabled: false,          // Bypasses the Apple Multicast block
+  broadcastEnabled: false           // Bypasses the Apple Broadcast block
+});
+```
+*(Note: The iOS Simulator does not enforce this entitlement, so you may also test freely on a Simulator).*
 
 #### Android
 
@@ -124,7 +135,9 @@ const devices = await search({
 | `timeoutMs` | `number` | `5000` | Total scan duration in milliseconds. The socket stays open for this duration to collect responses. |
 | `mx` | `number` | `3` | MX (Maximum Wait) header in seconds. Devices may delay their response up to this value. Higher values reduce UDP collisions on busy networks. |
 | `repeatProbe` | `boolean` | `true` | If true, a second probe burst is sent halfway through `timeoutMs`. Improves reliability on lossy or mesh Wi-Fi. |
-| `unicastTargets` | `string[]` | `[]` | Optional list of device IPv4 addresses to send unicast M-SEARCH packets to in addition to the standard multicast/broadcast probes. Useful for re-querying a known device or on networks that block multicast. |
+| `unicastTargets` | `string[]` | `[]` | Optional list of device IPv4 addresses to send unicast M-SEARCH packets to in addition to the standard probes. Useful for re-querying a known device. |
+| `multicastEnabled` | `boolean` | `true` | Whether to send probes to the UPnP multicast address (`239.255.255.250`). On iOS 14+, requires the `com.apple.developer.networking.multicast` entitlement. |
+| `broadcastEnabled` | `boolean` | `true` | Whether to send probes to the global broadcast address (`255.255.255.255`). This is a fallback for routers that block multicast. |
 
 #### Returns: `Promise<SsdpDevice[]>`
 

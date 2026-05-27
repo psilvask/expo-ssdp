@@ -9,8 +9,12 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## [0.0.2] — 2026-05-27
 
 ### Added
+- Added `multicastEnabled` and `broadcastEnabled` options to `SearchOptions` (default `true`). Setting these to `false` allows physical iOS devices to safely bypass Apple's strict Multicast Entitlement socket blocks by relying purely on `unicastTargets` fallback.
 - Added comprehensive unit testing suite with Jest (TypeScript API) and JUnit (Android utilities).
 - Added `exports` field to `package.json` for better modern bundler compatibility.
+
+### Changed
+- Fixed NPM package bloating by explicitly including only `android/src` and `android/build.gradle` in `package.json`, preventing 1.8MB of cached native binaries from being published.
 
 ### Fixed
 - **Native Stability:** Fixed thread-safety data races in iOS streaming and `stop()` logic. Fixed Android resource leaks by moving socket `leaveGroup` calls to coroutine `finally` blocks.
