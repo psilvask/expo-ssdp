@@ -1,6 +1,8 @@
 # expo-ssdp
 
-An Expo module for **SSDP (Simple Service Discovery Protocol)** device discovery on local networks. Discover smart TVs, DLNA servers, Chromecast devices, Roku players, Sonos speakers, routers, and any other UPnP/SSDP-capable device from your React Native app.
+Every existing SSDP library for React Native is either broken or hasn't been updated since 2016. I needed local discovery to work for an Expo project using the New Architecture, so I bit the bullet and wrote this custom module. It’s been stripped of my app-specific logic and made generic for anyone else who needs it.
+
+You can use this to discover smart TVs, DLNA servers, Chromecast devices, Roku players, Sonos speakers, and routers from your React Native app.
 
 <p align="center">
   <img src="./assets/screenshot-1.png" width="45%" alt="Android Example App" />
@@ -8,11 +10,10 @@ An Expo module for **SSDP (Simple Service Discovery Protocol)** device discovery
   <img src="./assets/screenshot-2.png" width="45%" alt="iOS Example App" />
 </p>
 
-- ✅ **New Architecture ready** — built on Expo Modules Core (Turbo Module via JSI)
-- ✅ **iOS and Android** — native UDP multicast on both platforms
-- ✅ **Reliable discovery** — sends to both multicast (`239.255.255.250`) and broadcast (`255.255.255.255`) addresses, with an optional second probe burst
-- ✅ **Fully typed** — comprehensive TypeScript types and JSDoc for every option and return value
-- ✅ **Pre-built search targets** — `SearchTargets` constants for common device categories
+- **Supports Android and iOS** (Uses native UDP multicast)
+- **Built with Expo Modules API** (New Architecture / Turbo Module ready)
+- **No manual linking needed**
+- **Sends to both multicast and broadcast addresses** for better router compatibility
 
 ---
 
@@ -218,11 +219,11 @@ const devices = await search();
 
 ## Examples
 
-For a complete, interactive, high-performance explorer application showcasing all features (with dark mode and detailed header inspection), check out the [example app](./example).
+For a complete, interactive explorer application showcasing all features, check out the [example app](./example).
 
 ### Real-Time Streaming Discovery
 
-Use `searchStream` (an `AsyncGenerator`) to yield devices as they are found, which makes your user interface feel extremely responsive:
+Use `searchStream` (an `AsyncGenerator`) to yield devices as they are found:
 
 ```typescript
 import { searchStream } from "expo-ssdp";
@@ -249,7 +250,7 @@ await stream.return(undefined);
 
 ### Passive Live Monitoring
 
-Instead of active querying, listen for unsolicited `NOTIFY` announcements sent by devices to automatically detect when they join (`ssdp:alive`) or leave (`ssdp:byebye`) the network:
+Listen for unsolicited `NOTIFY` announcements from devices joining or leaving the network:
 
 ```typescript
 import { listenForNotifications } from "expo-ssdp";
@@ -331,6 +332,8 @@ The `MX` header tells devices how long they may wait (in seconds) before sending
 **No devices found:**
 
 - Ensure your phone is on the same Wi-Fi network as the target devices.
+- **iOS Local Network Permissions**: Double-check that your app has `NSLocalNetworkUsageDescription` in its Info.plist and that the user actually granted the local network prompt.
+- **Android Emulator**: The Android emulator sits behind a virtual router. It cannot receive multicast packets from your physical local network. You must test on a physical Android device.
 - Try increasing `timeoutMs` to `10000` or `15000`.
 - Check that `CHANGE_WIFI_MULTICAST_STATE` is in your Android manifest.
 - Call `getNetworkInterfaces()` to verify the device has an active Wi-Fi interface.
