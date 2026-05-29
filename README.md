@@ -17,6 +17,12 @@ You can use this to discover smart TVs, DLNA servers, Chromecast devices, Roku p
 
 ---
 
+> [!WARNING]
+> **Expo Go Compatibility**
+> Because this package utilizes custom native code (Kotlin on Android and Swift on iOS) to manage raw UDP multicast and broadcast sockets, it **will not work** in the standard pre-compiled **Expo Go** application. 
+> 
+> To test and run this library, you must compile it into a **Development Build** (`expo-dev-client`) or run it in a vanilla React Native project.
+
 ## Installation
 
 ```sh
