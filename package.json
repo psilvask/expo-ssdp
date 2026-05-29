@@ -1,6 +1,6 @@
 {
   "name": "expo-ssdp",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "Cross-platform Expo native module for SSDP/UPnP device discovery on local networks. Supports iOS and Android with full New Architecture / Turbo Module compatibility.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -55,7 +55,6 @@
   },
   "peerDependencies": {
     "expo": ">=56.0.0",
-    "expo-modules-core": ">=56.0.0",
     "react": ">=19.2.0",
     "react-native": ">=0.78.0"
   },

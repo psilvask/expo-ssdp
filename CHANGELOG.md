@@ -6,6 +6,11 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [0.0.4] — 2026-05-29
+
+### Fixed
+- **Dependency Conflicts:** Removed `expo-modules-core` from `peerDependencies` to prevent package manager conflicts and resolve `expo-doctor` catch-22 warnings in user projects.
+
 ## [0.0.3] — 2026-05-27
 
 ### Added
